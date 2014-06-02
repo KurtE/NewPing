@@ -21,6 +21,12 @@ NewPing::NewPing(uint8_t trigger_pin, uint8_t echo_pin, int max_cm_distance) {
 
 	_triggerMode = (uint8_t *) portModeRegister(digitalPinToPort(trigger_pin)); // Get the port mode register for the trigger pin.
 
+#if defined(__arm__) && defined(TEENSYDUINO)
+	// on Teensy 3.x (ARM), pins default to disabled
+	// at least one pinMode() is needed for GPIO mode
+	pinMode(trigger_pin, INPUT);
+	pinMode(echo_pin, INPUT);
+#endif
 	_maxEchoTime = min(max_cm_distance, MAX_SENSOR_DISTANCE) * US_ROUNDTRIP_CM + (US_ROUNDTRIP_CM / 2); // Calculate the maximum distance in uS.
 
 #if DISABLE_ONE_PIN == true
@@ -147,6 +153,8 @@ void NewPing::timer_us(unsigned int frequency, void (*userFunc)(void)) {
 #if defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 	OCR4C = min((frequency>>2) - 1, 255); // Every count is 4uS, so divide by 4 (bitwise shift right 2) subtract one, then make sure we don't go over 255 limit.
 	TIMSK4 = (1<<TOIE4);                  // Enable Timer4 interrupt.
+#elif defined(__arm__) && defined(TEENSYDUINO)
+	itimer.begin(userFunc, (float)1000000.0 / (float)frequency);
 #else
 	OCR2A = min((frequency>>2) - 1, 255); // Every count is 4uS, so divide by 4 (bitwise shift right 2) subtract one, then make sure we don't go over 255 limit.
 	TIMSK2 |= (1<<OCIE2A);                // Enable Timer2 interrupt.
@@ -163,6 +171,8 @@ void NewPing::timer_ms(unsigned long frequency, void (*userFunc)(void)) {
 #if defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 	OCR4C = 249;         // Every count is 4uS, so 1ms = 250 counts - 1.
 	TIMSK4 = (1<<TOIE4); // Enable Timer4 interrupt.
+#elif defined(__arm__) && defined(TEENSYDUINO)
+	itimer.begin(NewPing::timer_ms_cntdwn, 1000.0);
 #else
 	OCR2A = 249;           // Every count is 4uS, so 1ms = 250 counts - 1.
 	TIMSK2 |= (1<<OCIE2A); // Enable Timer2 interrupt.
@@ -173,6 +183,8 @@ void NewPing::timer_ms(unsigned long frequency, void (*userFunc)(void)) {
 void NewPing::timer_stop() { // Disable timer interrupt.
 #if defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 	TIMSK4 = 0;
+#elif defined(__arm__) && defined(TEENSYDUINO)
+	itimer.end();
 #else
 	TIMSK2 &= ~(1<<OCIE2A);
 #endif
@@ -190,6 +202,8 @@ void NewPing::timer_setup() {
 	TCCR4B = (1<<CS42) | (1<<CS41) | (1<<CS40) | (1<<PSR4); // Set Timer4 prescaler to 64 (4uS/count, 4uS-1020uS range).
 	TIFR4 = (1<<TOV4);
 	TCNT4 = 0;    // Reset Timer4 counter.
+#elif defined(__arm__) && defined(TEENSYDUINO)
+	timer_stop();
 #else
 	timer_stop();           // Disable Timer2 interrupt.
 	ASSR &= ~(1<<AS2);      // Set clock, not pin.
@@ -210,6 +224,8 @@ void NewPing::timer_ms_cntdwn() {
 
 #if defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 ISR(TIMER4_OVF_vect) {
+#elif defined(__arm__) && defined(TEENSYDUINO)
+static void unusedfunction() {
 #else
 ISR(TIMER2_COMPA_vect) {
 #endif

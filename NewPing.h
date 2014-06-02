@@ -156,6 +156,9 @@ class NewPing {
 		unsigned long _max_time;
 		static void timer_setup();
 		static void timer_ms_cntdwn();
+#if defined(__arm__) && defined(TEENSYDUINO)
+		static IntervalTimer itimer;
+#endif
 };
 
 
