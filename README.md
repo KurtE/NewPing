@@ -10,3 +10,8 @@ https://github.com/PaulStoffregen/NewPing
 
 http://forum.pjrc.com/threads/25907-Multiple-HCSR-04-Ultrasonic-sensors-on-teensy-3
 
+![Photo](https://raw.githubusercontent.com/PaulStoffregen/NewPing/master/extras/NewPing_photo.jpg)
+
+![Screenshot](https://raw.githubusercontent.com/PaulStoffregen/NewPing/master/extras/NewPing_screenshot.png)
+
+
