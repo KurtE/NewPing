@@ -7,6 +7,11 @@
 
 #include "NewPing.h"
 
+#if defined(__arm__) && defined(TEENSYDUINO)
+#include <IntervalTimer.h>
+IntervalTimer NewPing::itimer;
+#endif
+
 
 // ---------------------------------------------------------------------------
 // NewPing constructor
